@@ -34,6 +34,60 @@
 	export let cssDisabledColor: typeColor = 'rgba(33, 37, 41, 0.75)';
 	export let cssBorderColor: typeColor = '#dee2e6';
 	/////
+	export let maxPageDisplay: number | null = null;
+	let shortify: any = [];
+
+	function pagination() {
+		if (!maxPageDisplay) {
+			return [];
+		}
+		const m = maxPageDisplay / 2;
+
+		var left = 0,
+			right = 0,
+			range = [],
+			rangeWithDots = [],
+			l;
+
+		if (propActivePage === 1) {
+			right = maxPageDisplay;
+		} else {
+			if (m % 2 === 0) {
+				left = propActivePage - m;
+				right = propActivePage + m + 1;
+			} else {
+				left = propActivePage - m;
+				right = propActivePage + m;
+			}
+		}
+
+		for (let i = 1; i <= propNumberOfPages; i++) {
+			if (i == 1 || i == propNumberOfPages || (i >= left && i < right)) {
+				range.push(i);
+			}
+		}
+
+		for (let i of range) {
+			if (l) {
+				if (i - l === 2) {
+					rangeWithDots.push(l + 1);
+				} else if (i - l !== 1) {
+					rangeWithDots.push(-1);
+				}
+			}
+			rangeWithDots.push(i);
+			l = i;
+		}
+
+		return rangeWithDots;
+	}
+
+	$: propActivePage &&
+		(() => {
+			if (maxPageDisplay && maxPageDisplay < propNumberOfPages) {
+				shortify = pagination();
+			}
+		})();
 </script>
 
 <div
@@ -81,27 +135,55 @@
 					</li>
 				{/if}
 
-				{#each Array(propNumberOfPages) as _, numberCounter}
-					<li
-						class="page-item"
-						class:active={numberCounter + 1 === propActivePage}
-						style:cursor={propActivePage === numberCounter + 1 ? 'default' : 'pointer'}
-					>
-						<div
-							on:keydown
-							role="button"
-							tabindex="0"
-							on:click={() => {
-								propActivePage = numberCounter + 1;
-								dispatch('eventChange', {
-									numberActivePage: propActivePage
-								});
-							}}
+				{#if shortify.length}
+					{#each shortify as item}
+						{#if item === -1}
+							<span class="page-link">...</span>
+						{:else}
+							<li
+								class="page-item"
+								class:active={item === propActivePage}
+								style:cursor={propActivePage === item ? 'default' : 'pointer'}
+							>
+								<div
+									on:keydown
+									role="button"
+									tabindex="0"
+									on:click={() => {
+										propActivePage = item;
+										dispatch('eventChange', {
+											numberActivePage: propActivePage
+										});
+									}}
+								>
+									<span class="page-link">{item}</span>
+								</div>
+							</li>
+						{/if}
+					{/each}
+				{:else}
+					{#each Array(propNumberOfPages) as _, numberCounter}
+						<li
+							class="page-item"
+							class:active={numberCounter + 1 === propActivePage}
+							style:cursor={propActivePage === numberCounter + 1 ? 'default' : 'pointer'}
 						>
-							<span class="page-link">{numberCounter + 1}</span>
-						</div>
-					</li>
-				{/each}
+							<div
+								on:keydown
+								role="button"
+								tabindex="0"
+								on:click={() => {
+									propActivePage = numberCounter + 1;
+									dispatch('eventChange', {
+										numberActivePage: propActivePage
+									});
+								}}
+							>
+								<span class="page-link">{numberCounter + 1}</span>
+							</div>
+						</li>
+					{/each}
+				{/if}
 				{#if propActivePage === propNumberOfPages}
 					<li class="page-item disabled" style="cursor:not-allowed;">
 						<span class="page-link">{propNext}</span>
